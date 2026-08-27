@@ -1,0 +1,162 @@
+--เริ่มจาก Master สร้างบานข้อมูล CSMinimart
+Create Database CSMinimart
+--ปรับให้ฐานข้อมูลสามารถเพิ่มข้อมุลที่เป็นภาษาไทยได้
+Alter Database CSMinimart Collate Thai_CI_AS;
+--เปลี่ยนฐานข้อมูลไปใช้ CSMinimart เปลี่ยนบนเมนู
+--สร้างตารางเก็บข้อมูลพนักงาน ชื่อ Empoyees 
+CREATE TABLE Employees (
+    EmployeeID INT IDENTITY(1,1) PRIMARY KEY,
+    Title VARCHAR(20),
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50),
+    Position VARCHAR(50),
+    UserName VARCHAR(50) UNIQUE,
+    PasswordHash VARCHAR(255) NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1
+);
+INSERT INTO Employees 
+    (Title,FirstName,LastName,Position,UserName,PasswordHash)
+VALUES 
+    ('นางสาว','กาญจนา','พวงแก้ว','Sale Manager','user1','hashed1');
+    INSERT INTO Employees 
+    (Title, FirstName, LastName, Position, UserName, PasswordHash)
+VALUES 
+    ('นาย', 'สมชาย', 'ใจดี', 'Developer', 'user2', 'hashed2');
+ Select * from Employees
+
+
+--สร้างตารางอาหาร
+CREATE TABLE Categories (
+    CategoryID INT IDENTITY(1,1) PRIMARY KEY,
+    CategoryName VARCHAR(50) NOT NULL UNIQUE,
+    Description VARCHAR(200)
+);
+
+INSERT INTO Categories (CategoryName, Description)
+VALUES 
+    ('เครื่องดื่ม', 'น้ำดื่ม น้ำผลไม้ ชาและกาแฟ'),
+    ('ขนมขบเคี้ยว', 'มันฝรั่งทอด คุกกี้ และเยลลี่'),
+    ('บะหมี่กึ่งสำเร็จรูป', 'บะหมี่ โจ๊ก และอาหารกึ่งสำเร็จรูปต่างๆ'),
+    ('ของใช้ส่วนตัว', 'สบู่ ยาสระผม และยาสีฟัน'),
+    ('ยาสามัญประจำบ้าน', 'ยาแก้ปวด ยาลดไข้ และพลาสเตอร์ยา');
+
+SELECT * FROM Categories;
+
+--สร้างตารางใบเสร็จ
+CREATE TABLE Products (
+    ProductID VARCHAR(13) PRIMARY KEY,
+    ProductName VARCHAR(100) NOT NULL,
+    UnitPrice DECIMAL(10,2) NOT NULL DEFAULT 0,
+    UnitsInStock INT NOT NULL DEFAULT 0,
+    CategoryID INT NOT NULL,
+    Discontinued BIT NOT NULL DEFAULT 0,
+
+   
+    CONSTRAINT CK_Products_UnitPrice 
+        CHECK (UnitPrice >= 0),
+
+   
+    CONSTRAINT CK_Products_UnitsInStock 
+        CHECK (UnitsInStock >= 0),
+
+    
+    CONSTRAINT FK_Products_Categories 
+        FOREIGN KEY (CategoryID) REFERENCES Categories(CategoryID)
+);
+INSERT INTO Products 
+    (ProductID, ProductName, UnitPrice, UnitsInStock, CategoryID)
+VALUES 
+    ('8858757001948', 'โค้ก', 15.00, 290, 1),
+    ('8850999111222', 'น้ำดื่มสิงห์ 600 มล.', 10.00, 150, 1),
+    ('8850123456789', 'เลย์ รสมันฝรั่งแท้', 30.00, 80, 2),
+    ('8850543210987', 'นมจืดเมจิ 450 มล.', 26.00, 45, 1),
+    ('8851111222333', 'มาม่า รสต้มยำกุ้ง', 7.00, 300, 3);
+
+SELECT * FROM Products;
+
+
+CREATE TABLE Receipts (
+    ReceiptID INT IDENTITY(1,1) PRIMARY KEY,
+    ReceiptDate DATETIME NOT NULL DEFAULT GETDATE(),
+    EmployeeID INT NOT NULL,
+    TotalCash DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    CONSTRAINT CK_Receipts_TotalCash 
+        CHECK (TotalCash >= 0),
+
+    CONSTRAINT FK_Receipts_Employees 
+        FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)
+);
+INSERT INTO Receipts (EmployeeID, TotalCash)
+VALUES 
+    (1, 115.00);
+
+SELECT * FROM Receipts;
+
+
+CREATE TABLE Details (
+    ReceiptID INT NOT NULL,
+    ProductID VARCHAR(13) NOT NULL,
+    UnitPrice DECIMAL(10,2) NOT NULL,
+    Quantity INT NOT NULL,
+
+    CONSTRAINT PK_Details 
+        PRIMARY KEY (ReceiptID, ProductID),
+
+    CONSTRAINT CK_Details_UnitPrice 
+        CHECK (UnitPrice >= 0),
+
+    CONSTRAINT CK_Details_Quantity 
+        CHECK (Quantity > 0),
+
+    CONSTRAINT FK_Details_Receipts 
+        FOREIGN KEY (ReceiptID) REFERENCES Receipts(ReceiptID),
+
+    CONSTRAINT FK_Details_Products 
+        FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+INSERT INTO Details (ReceiptID, ProductID, UnitPrice, Quantity)
+VALUES 
+    (1, '8858757001948', 15.00, 3);
+SELECT * FROM Employees;
+SELECT * FROM Categories;
+SELECT * FROM Products;
+SELECT * FROM Receipts;
+SELECT * FROM Details;
+   
+SELECT 
+    r.ReceiptID,
+    r.ReceiptDate,
+    e.FirstName,
+    e.LastName,
+    r.TotalCash
+FROM Receipts AS r
+INNER JOIN Employees AS e 
+    ON r.EmployeeID = e.EmployeeID;
+
+    SELECT 
+    d.ReceiptID,
+    p.ProductName,
+    d.UnitPrice,
+    d.Quantity,
+    d.UnitPrice * d.Quantity AS LineTotal
+FROM Details AS d
+INNER JOIN Products AS p 
+    ON d.ProductID = p.ProductID;
+
+    SELECT 
+    r.ReceiptID,
+    r.ReceiptDate,
+    e.FirstName,
+    p.ProductName,
+    d.UnitPrice,
+    d.Quantity,
+    d.UnitPrice * d.Quantity AS LineTotal
+FROM Receipts AS r
+INNER JOIN Employees AS e 
+    ON r.EmployeeID = e.EmployeeID
+INNER JOIN Details AS d 
+    ON r.ReceiptID = d.ReceiptID
+INNER JOIN Products AS p 
+    ON d.ProductID = p.ProductID;
+    SELECT * FROM Details;
