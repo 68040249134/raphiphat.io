@@ -1,0 +1,122 @@
+SELECT *
+FROM INFORMATION_SCHEMA. TABLES
+WHERE TABLE_TYPE = 'BASE TABLE';
+
+exec sp_help 'employees'
+DROP TABLE dbo.receipts;
+--คำสั่ง Select เบื้องต้น (Query Data)
+--ต้องการข้อมูลสินค้า
+Select * from Products
+--ต้องการ รหัสสินค้า ชื่อสินค้า ราคา
+Select ProductID, ProductName, Unitprice from Products
+--ต้องการ ชื่อสินค้า ราคา
+----Alias Name = เรียกง่ายๆว่าชื่อเล่น
+Select ProductID as รหัส , ProductName as ชื่อสินค้า, Unitprice as ราคา
+from Products
+--ใช้ Distinct สำหรับกำจัดข้อมูลที่ซ้ำกัน
+Select Position from Employees
+--ใช้ Top(n) สำหรับอสดงข้อมูล n รายการ (โดยปกติจะใช้ร่วมกับการเรียงลำดับ)
+Select top(5) ProductID, ProductName, Unitprice from Products
+--ปรับปรุงราคาสินค้า "ดินสอ" เป็นราคาใหม่ 17 บาท
+Update products
+set UnitPrice = 17 UnitsInStock '=' '100'
+where ProductName = 'ดินสอ'
+--ดหลังจากรันโค้ดแล้วดูข้อมูลว่าเปลี่ยนหรือไม่
+Select * from Products
+Update dbo.products
+SET UnitPrice = UnitPrice * 1.05;
+--ปรับปรุงจำนวนคงเหลือของน้ำส้ม เพิ่มจากเดิม 100 ชิ้น
+Update products
+SET  UnitsInStock = 320 UnitsInStock +100 
+where ProductName = 'น้ำส้ม'
+--ปรับปรุงราคาแชมพู ลดลง 5 บาท
+Update products
+set UnitPrice=  UnitPrice -5 
+where ProductName = 'แชมพุ'
+DELETE FROM dbo. Products
+WHERE ProductName = 'ดินสอ'
+	
+--การใช้ where ใน ตำสั่ง select
+select * from products
+where Unitprice <20
+
+--ชื่อนามสกุล พนักงาน ที่มีตำแหน่ง 'sale manager'
+select firstname,lastname
+from Employees
+where position ='sele manager'
+--รหัส ชื่อสินค้า ที่เลิกจำหน่วย (discontinue =1)
+select productID, productName
+from products
+where discontinued =1
+
+-- ชุดที่ 1: การใช้ AND
+SELECT *
+FROM dbo.Products
+WHERE UnitPrice >= 10
+  AND UnitsInStock < 100;
+
+-- ชุดที่ 2: การใช้ OR
+SELECT *
+FROM dbo.Products
+WHERE CategoryID = 2
+   OR CategoryID = 4;
+
+-- ชุดที่ 3: การใช้ NOT
+SELECT *
+FROM dbo.Products
+WHERE NOT Discontinued = 1;
+
+--ต้องการข้อมูลสินค้าที่มีจำนวนคงเหลือ 300-500 ชิ้น
+select * from products
+where UnitsInStock between 300 and 500 
+
+--เงื่อนไขร่วมกับ wildCard %
+--ต้องการข้อมูลพนักงงานที่มีชื่อขึ้นต้นด้วย ก
+select * from employees
+where firstname like 'ก%'
+----ต้องการข้อมุลพนักงานที่มีนามสกุลลงท้ายด้วย "คำ"
+select * from employees
+where lastname like '%คำ'
+--เตรียมข้อมูลใช้กับคำสั่ง is Null
+insert into employees (firstname , username,password)
+values ('ไอซ์', 'ice', '1234' ),('บาส','bas', '1234')
+--ข้อมูลพนักงานที่ไม่ทราบนามสกุล
+select * from  Employees
+where lastname is null or lastname = ''
+--ปรัยปรุงข้อมูลทดสอบช่องว่าง
+update Employees set LastName = ''
+where firstname = 'บาส'
+
+--ปัญหาเบื้องต่นจากค่า null คือ ไปรวมกับใครก็เป็น null ไปหมด
+select firstname+''+lastname as ชื่อพนักงาน
+from Employees
+
+--ต้องการข้อมูลใบเสร็จที่ขายสินค้าก่อนวันที่ 10 ก.พ. 2013
+select * from Receipts 
+where receiptDate >= '2013-02-10'
+
+--บางกรณีใช้ Function year () หรือ () ร่วมกับเงื่อนไขได้
+--ต้องการข้อมูลใบเสร็จที่ขายสินค้าในเดือนกุมภาพันธ์ ปี 2023
+select * from receipts
+where year (receiptdate) = 2013
+and month (receiptdate) = 02
+
+-- ชุดที่ 1: เรียงจากน้อยไปมาก (ASC - Ascending)
+SELECT 
+    ProductID,
+    ProductName,
+    UnitPrice
+FROM dbo.Products
+ORDER BY UnitPrice ASC;
+
+-- ชุดที่ 2: เรียงจากมากไปน้อย (DESC - Descending)
+SELECT 
+    ProductID,
+    ProductName,
+    UnitPrice
+FROM dbo.Products
+ORDER BY UnitPrice DESC;
+
+--ต้องการข้อมูลใบเสร็จ อันใหม่สุดขึ้นก่อน
+select * from receipts
+order by receiptdate desc
